@@ -1,0 +1,44 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/5/Computer.hdl
+/**
+ * The Hack computer, consisting of CPU, ROM and RAM.
+ * When reset = 0, the program stored in the ROM executes.
+ * When reset = 1, the program's execution restarts. 
+ * Thus, to start running the currently loaded program,
+ * set reset to 1, and then set it to 0. 
+ * From this point onwards, the user is at the mercy of the software.
+ * Depending on the program's code, and whether the code is correct,
+ * the screen may show some output, the user may be expected to enter
+ * some input using the keyboard, or the program may do some procerssing. 
+ */
+CHIP Computer {
+
+    IN reset;
+
+    PARTS:
+    //// Replace this comment with your code.
+    // 1. 程序存储器（ROM32K）：存储待执行的程序指令
+        // 输入：CPU的pc（下一条指令地址）
+        // 输出：当前要执行的指令（instruction）
+        ROM32K(address=pc, out=instruction);
+
+        // 2. 数据存储器（Memory）：存储数据（含RAM、屏幕、键盘）
+        // 输入：CPU指定的地址（addressM）、要写入的数据（outM）、写控制信号（writeM）
+        // 输出：当前地址的数据（inM），供CPU读取
+        Memory(address=addressM, in=outM, load=writeM, out=inM);
+
+        // 3. 中央处理器（CPU）：执行指令，协调ROM和Memory
+        // 输入：Memory的数据（inM）、ROM的指令（instruction）、重置信号（reset）
+        // 输出：要写入Memory的数据（outM）、写控制（writeM）、Memory地址（addressM）、下一条指令地址（pc）
+        CPU(
+            inM=inM,
+            instruction=instruction,
+            reset=reset,
+            outM=outM,
+            writeM=writeM,
+            addressM=addressM,
+            pc=pc
+        );
+}

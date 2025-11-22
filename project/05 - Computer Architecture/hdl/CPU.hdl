@@ -1,0 +1,114 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/5/CPU.hdl
+/**
+ * The Hack Central Processing unit (CPU).
+ * Parses the binary code in the instruction input and executes it according to the
+ * Hack machine language specification. In the case of a C-instruction, computes the
+ * function specified by the instruction. If the instruction specifies to read a memory
+ * value, the inM input is expected to contain this value. If the instruction specifies
+ * to write a value to the memory, sets the outM output to this value, sets the addressM
+ * output to the target address, and asserts the writeM output (when writeM = 0, any
+ * value may appear in outM).
+ * If the reset input is 0, computes the address of the next instruction and sets the
+ * pc output to that value. If the reset input is 1, sets pc to 0.
+ * Note: The outM and writeM outputs are combinational: they are affected by the
+ * instruction's execution during the current cycle. The addressM and pc outputs are
+ * clocked: although they are affected by the instruction's execution, they commit to
+ * their new values only in the next cycle.
+ */
+CHIP CPU {
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write to M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+
+    PARTS:
+	//// Replace this comment with your code.
+    // ========================= 1. 解析C指令的dest和jump字段 =========================
+    // 注：instruction[15]是C指令标志（1=C指令，0=A指令），仅C指令时以下信号有效
+    
+    // dest字段解析（bit5、bit4、bit3分别对应d1、d2、d3，控制结果存储位置）
+    And(a=instruction[15], b=instruction[5], out=d1);  // d1=1：结果写入A寄存器（dest含A）
+    And(a=instruction[15], b=instruction[4], out=d2);  // d2=1：结果写入D寄存器（dest含D）
+    And(a=instruction[15], b=instruction[3], out=d3, out=writeM);  // d3=1：结果写入M（同时作为writeM控制信号）
+    
+    // jump字段解析（bit2、bit1、bit0分别对应j1、j2、j3，控制跳转条件）
+    And(a=instruction[15], b=instruction[2], out=j1);  // j1=1：跳转条件包含"小于"（JLT）
+    And(a=instruction[15], b=instruction[1], out=j2);  // j2=1：跳转条件包含"等于"（JEQ）
+    And(a=instruction[15], b=instruction[0], out=j3);  // j3=1：跳转条件包含"大于"（JGT）
+
+
+    // ========================= 2. A寄存器控制 =========================
+    // A寄存器输入选择：A指令时用指令低16位（地址），C指令时用ALU输出（若dest指定写A）
+    Mux16(a=instruction, b=outputM, sel=instruction[15], out=Ainput);  // sel=1（C指令）选ALU结果，sel=0（A指令）选指令本身
+    
+    // A寄存器加载控制：A指令必加载，C指令时dest含A（d1=1）才加载
+    Not(in=instruction[15], out=Aload1);  // A指令时（instruction[15]=0），Aload1=1（需要加载）
+    Or(a=d1, b=Aload1, out=Aload);  // 合并A指令和C指令的加载条件
+    
+    // A寄存器实例：存储地址或计算结果，输出作为内存地址（addressM）
+    ARegister(in=Ainput, load=Aload, out=Areg, out[0..14]=addressM);  // Areg是A寄存器的值，低15位映射到addressM
+
+
+    // ========================= 3. D寄存器控制 =========================
+    // D寄存器：仅C指令且dest含D（d2=1）时，加载ALU的计算结果
+    DRegister(in=outputM, load=d2, out=Dreg);  // Dreg是D寄存器的值
+
+
+    // ========================= 4. ALU计算模块 =========================
+    // ALU的y输入选择：根据instruction[12]（a位）选择A寄存器（Areg）或内存（inM）
+    Mux16(a=Areg, b=inM, sel=instruction[12], out=y);  // a=0选A，a=1选M
+    
+    // ALU执行计算：x输入为D寄存器（Dreg），y输入为上述选择结果，控制信号来自instruction[11..6]（comp字段）
+    ALU(
+        x=Dreg, 
+        y=y, 
+        zx=instruction[11],  // comp字段bit11：x是否置零
+        nx=instruction[10],  // comp字段bit10：x是否取反
+        zy=instruction[9],   // comp字段bit9：y是否置零
+        ny=instruction[8],   // comp字段bit8：y是否取反
+        f=instruction[7],    // comp字段bit7：是否执行加法（1=加，0=与）
+        no=instruction[6],   // comp字段bit6：结果是否取反
+        out=outputM,         // ALU计算结果（内部临时变量）
+        out=outM,            // 映射到输出outM（要写入M的值）
+        zr=zr,               // 零标志（结果为0则1）
+        ng=ng                // 负标志（结果为负则1）
+    );
+
+
+    // ========================= 5. 程序计数器（PC）控制 =========================
+    // 跳转条件判断：根据ALU的zr/ng标志和jump字段计算是否跳转
+    And(a=ng, b=j1, out=tmp1);  // tmp1=1：满足"小于"跳转（JLT：ng=1且j1=1）
+    And(a=zr, b=j2, out=tmp2);  // tmp2=1：满足"等于"跳转（JEQ：zr=1且j2=1）
+    
+    // 计算"大于"条件（结果为正：非零且非负）
+    Not(in=zr, out=notzr);     // notzr=1：结果非零
+    Not(in=ng, out=notng);     // notng=1：结果非负
+    And(a=notzr, b=notng, out=ps);  // ps=1：结果为正
+    And(a=ps, b=j3, out=tmp3);  // tmp3=1：满足"大于"跳转（JGT：ps=1且j3=1）
+    
+    // 总跳转信号：任意条件满足则跳转
+    Or(a=tmp1, b=tmp2, out=tmp);
+    Or(a=tmp, b=tmp3, out=jump);  // jump=1：执行跳转
+    
+    // PC增量控制：不跳转时自增（jump=0则inc=1）
+    Not(in=jump, out=inc);
+    
+    // PC实例：控制下一条指令地址
+    PC(
+        in=Areg,    // 跳转目标地址（A寄存器的值）
+        load=jump,  // 1=加载目标地址（跳转），0=不加载
+        inc=inc,    // 1=当前地址+1（不跳转时）
+        reset=reset,  // 1=强制重置到地址0
+        out[0..14]=pc  // 输出下一条指令地址
+    );
+}
