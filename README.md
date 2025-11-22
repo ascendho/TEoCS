@@ -14,5 +14,5 @@
 ## 证书
 
 <div align="center">
-  <img src="certificate/Part I.pdf" height="500">
+  <img src="certificate/Part I.png" height="500">
 </div>
