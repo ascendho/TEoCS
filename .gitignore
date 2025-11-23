@@ -9,6 +9,9 @@ VMTranslator
 project/07 - VM I_Stack Arithmetic/**/*.asm
 project/08 - VM II_Program Control/**/*.asm
 
+# Project 6 生成的二进制文件
+project/06 - Assembler/code/binary/
+
 # 汇编器生成的二进制文件（可选：如果想跟踪，可以注释掉）
 # *.hack
 
