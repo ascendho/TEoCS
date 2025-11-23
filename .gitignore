@@ -3,6 +3,7 @@
 *.out
 *.exe
 assembler
+VMTranslator
 
 # 汇编器生成的二进制文件（可选：如果想跟踪，可以注释掉）
 # *.hack
