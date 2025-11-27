@@ -1,0 +1,40 @@
+/**
+ * Main.jack
+ * 贪吃蛇游戏主程序
+ * 
+ * 游戏说明：
+ * - 使用方向键控制蛇的移动
+ * - 吃到食物后蛇会变长，得分增加
+ * - 撞到墙壁或自己的身体会游戏结束
+ * - 按 Q 键退出游戏
+ */
+
+class Main {
+    function void main() {
+        var SnakeGame game;
+        
+        // 显示欢迎信息
+        do Output.printString("SNAKE GAME");
+        do Output.println();
+        do Output.printString("Use arrow keys to move");
+        do Output.println();
+        do Output.printString("Press Q to quit");
+        do Output.println();
+        do Output.printString("Press any key to start...");
+        
+        // 等待按键开始
+        while (Keyboard.keyPressed() = 0) {
+            // 等待
+        }
+        
+        // 清屏
+        do Screen.clearScreen();
+        
+        // 创建并运行游戏
+        let game = SnakeGame.new();
+        do game.run();
+        do game.dispose();
+        
+        return;
+    }
+}

@@ -1,0 +1,158 @@
+/**
+ * SnakeGame.jack
+ * 贪吃蛇游戏控制类
+ * 负责游戏循环、碰撞检测、得分计算等
+ */
+
+class SnakeGame {
+    field Snake snake;
+    field Food food;
+    field int score;
+    field boolean gameOver;
+    field int delay;
+    
+    /** 构造函数：初始化游戏 */
+    constructor SnakeGame new() {
+        let snake = Snake.new(256, 128);  // 屏幕中心位置
+        let food = Food.new();
+        let score = 0;
+        let gameOver = false;
+        let delay = 100;  // 游戏速度（延迟时间）
+        
+        // 绘制边界
+        do drawBorder();
+        
+        // 显示初始分数
+        do showScore();
+        
+        return this;
+    }
+    
+    /** 析构函数：释放内存 */
+    method void dispose() {
+        do snake.dispose();
+        do food.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+    
+    /** 绘制游戏边界 */
+    method void drawBorder() {
+        // 顶部边界
+        do Screen.drawLine(0, 0, 511, 0);
+        // 底部边界
+        do Screen.drawLine(0, 255, 511, 255);
+        // 左边界
+        do Screen.drawLine(0, 0, 0, 255);
+        // 右边界
+        do Screen.drawLine(511, 0, 511, 255);
+        return;
+    }
+    
+    /** 显示分数 */
+    method void showScore() {
+        do Output.moveCursor(0, 0);
+        do Output.printString("Score: ");
+        do Output.printInt(score);
+        return;
+    }
+    
+    /** 游戏主循环 */
+    method void run() {
+        var char key;
+        var boolean hasEaten;
+        
+        while (~gameOver) {
+            // 获取键盘输入
+            let key = Keyboard.keyPressed();
+            
+            // 处理方向控制
+            if (key = 81) {  // Q 键退出
+                let gameOver = true;
+            }
+            if (key = 131) {  // 上箭头
+                do snake.setDirection(1);
+            }
+            if (key = 133) {  // 下箭头
+                do snake.setDirection(2);
+            }
+            if (key = 130) {  // 左箭头
+                do snake.setDirection(3);
+            }
+            if (key = 132) {  // 右箭头
+                do snake.setDirection(4);
+            }
+            
+            // 移动蛇
+            do snake.move();
+            
+            // 检查是否吃到食物
+            let hasEaten = checkFoodCollision();
+            if (hasEaten) {
+                let score = score + 10;
+                do showScore();
+                do snake.grow();
+                do food.respawn();
+            }
+            
+            // 检查碰撞
+            if (checkWallCollision() | snake.checkSelfCollision()) {
+                let gameOver = true;
+            }
+            
+            // 延迟（控制游戏速度）
+            do Sys.wait(delay);
+        }
+        
+        // 游戏结束
+        do showGameOver();
+        return;
+    }
+    
+    /** 检查是否吃到食物 */
+    method boolean checkFoodCollision() {
+        var int snakeX, snakeY;
+        var int foodX, foodY;
+        
+        let snakeX = snake.getHeadX();
+        let snakeY = snake.getHeadY();
+        let foodX = food.getX();
+        let foodY = food.getY();
+        
+        // 检查蛇头和食物的位置是否重合（使用网格对齐）
+        if ((Math.abs(snakeX - foodX) < 8) & (Math.abs(snakeY - foodY) < 8)) {
+            return true;
+        }
+        return false;
+    }
+    
+    /** 检查是否撞墙 */
+    method boolean checkWallCollision() {
+        var int x, y;
+        let x = snake.getHeadX();
+        let y = snake.getHeadY();
+        
+        // 检查是否超出边界
+        if ((x < 4) | (x > 507) | (y < 4) | (y > 251)) {
+            return true;
+        }
+        return false;
+    }
+    
+    /** 显示游戏结束画面 */
+    method void showGameOver() {
+        do Output.moveCursor(11, 20);
+        do Output.printString("GAME OVER!");
+        do Output.moveCursor(12, 18);
+        do Output.printString("Final Score: ");
+        do Output.printInt(score);
+        do Output.moveCursor(13, 15);
+        do Output.printString("Press any key to exit");
+        
+        // 等待按键
+        while (Keyboard.keyPressed() = 0) {
+            // 等待
+        }
+        return;
+    }
+}

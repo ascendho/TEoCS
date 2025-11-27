@@ -1,0 +1,188 @@
+/**
+ * Snake.jack
+ * 蛇的类
+ * 使用数组存储蛇的身体各个部分的坐标
+ */
+
+class Snake {
+    field Array bodyX, bodyY;  // 蛇身体各部分的 x, y 坐标
+    field int length;          // 蛇的长度
+    field int maxLength;       // 最大长度
+    field int direction;       // 当前移动方向: 1=上, 2=下, 3=左, 4=右
+    field int size;            // 蛇身体每节的大小
+    field boolean shouldGrow;  // 是否需要增长
+    
+    /** 构造函数：创建初始蛇 */
+    constructor Snake new(int startX, int startY) {
+        let maxLength = 100;
+        let bodyX = Array.new(maxLength);
+        let bodyY = Array.new(maxLength);
+        let length = 3;
+        let direction = 4;  // 初始方向向右
+        let size = 8;
+        let shouldGrow = false;
+        
+        // 初始化蛇的位置（头在右，尾在左）
+        let bodyX[0] = startX;
+        let bodyY[0] = startY;
+        let bodyX[1] = startX - size;
+        let bodyY[1] = startY;
+        let bodyX[2] = startX - (size * 2);
+        let bodyY[2] = startY;
+        
+        // 绘制初始蛇
+        do draw();
+        
+        return this;
+    }
+    
+    /** 析构函数 */
+    method void dispose() {
+        do bodyX.dispose();
+        do bodyY.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+    
+    /** 设置移动方向 */
+    method void setDirection(int dir) {
+        // 防止反向移动（不能直接掉头）
+        if (direction = 1) {  // 当前向上
+            if (~(dir = 2)) {  // 不能向下
+                let direction = dir;
+            }
+        }
+        if (direction = 2) {  // 当前向下
+            if (~(dir = 1)) {  // 不能向上
+                let direction = dir;
+            }
+        }
+        if (direction = 3) {  // 当前向左
+            if (~(dir = 4)) {  // 不能向右
+                let direction = dir;
+            }
+        }
+        if (direction = 4) {  // 当前向右
+            if (~(dir = 3)) {  // 不能向左
+                let direction = dir;
+            }
+        }
+        return;
+    }
+    
+    /** 移动蛇 */
+    method void move() {
+        var int i;
+        var int newX, newY;
+        
+        // 计算新的头部位置
+        let newX = bodyX[0];
+        let newY = bodyY[0];
+        
+        if (direction = 1) { let newY = newY - size; }  // 上
+        if (direction = 2) { let newY = newY + size; }  // 下
+        if (direction = 3) { let newX = newX - size; }  // 左
+        if (direction = 4) { let newX = newX + size; }  // 右
+        
+        // 如果不需要增长，擦除尾部
+        if (~shouldGrow) {
+            do eraseSegment(length - 1);
+            
+            // 将身体各部分向后移动
+            let i = length - 1;
+            while (i > 0) {
+                let bodyX[i] = bodyX[i - 1];
+                let bodyY[i] = bodyY[i - 1];
+                let i = i - 1;
+            }
+        } else {
+            // 需要增长时，移动所有部分但不擦除尾部
+            let i = length;
+            while (i > 0) {
+                let bodyX[i] = bodyX[i - 1];
+                let bodyY[i] = bodyY[i - 1];
+                let i = i - 1;
+            }
+            let length = length + 1;
+            let shouldGrow = false;
+        }
+        
+        // 设置新的头部位置
+        let bodyX[0] = newX;
+        let bodyY[0] = newY;
+        
+        // 绘制新的头部
+        do drawSegment(0);
+        
+        return;
+    }
+    
+    /** 标记蛇需要增长 */
+    method void grow() {
+        if (length < maxLength) {
+            let shouldGrow = true;
+        }
+        return;
+    }
+    
+    /** 绘制整条蛇 */
+    method void draw() {
+        var int i;
+        let i = 0;
+        while (i < length) {
+            do drawSegment(i);
+            let i = i + 1;
+        }
+        return;
+    }
+    
+    /** 绘制蛇的一节 */
+    method void drawSegment(int index) {
+        var int x, y;
+        let x = bodyX[index];
+        let y = bodyY[index];
+        do Screen.setColor(true);
+        do Screen.drawRectangle(x - (size/2), y - (size/2), 
+                               x + (size/2), y + (size/2));
+        return;
+    }
+    
+    /** 擦除蛇的一节 */
+    method void eraseSegment(int index) {
+        var int x, y;
+        let x = bodyX[index];
+        let y = bodyY[index];
+        do Screen.setColor(false);
+        do Screen.drawRectangle(x - (size/2), y - (size/2), 
+                               x + (size/2), y + (size/2));
+        return;
+    }
+    
+    /** 获取蛇头的 X 坐标 */
+    method int getHeadX() {
+        return bodyX[0];
+    }
+    
+    /** 获取蛇头的 Y 坐标 */
+    method int getHeadY() {
+        return bodyY[0];
+    }
+    
+    /** 检查是否撞到自己 */
+    method boolean checkSelfCollision() {
+        var int i;
+        var int headX, headY;
+        
+        let headX = bodyX[0];
+        let headY = bodyY[0];
+        
+        let i = 1;
+        while (i < length) {
+            if ((headX = bodyX[i]) & (headY = bodyY[i])) {
+                return true;
+            }
+            let i = i + 1;
+        }
+        return false;
+    }
+}

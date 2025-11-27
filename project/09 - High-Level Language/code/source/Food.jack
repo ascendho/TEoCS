@@ -1,0 +1,81 @@
+/**
+ * Food.jack
+ * 食物类
+ * 负责生成和绘制食物
+ */
+
+class Food {
+    field int x, y;
+    field int size;
+    field int seed;  // 用于伪随机数生成
+    
+    /** 构造函数：创建食物 */
+    constructor Food new() {
+        let size = 6;
+        let seed = 12345;  // 初始种子
+        
+        // 生成初始食物位置
+        do respawn();
+        
+        return this;
+    }
+    
+    /** 析构函数 */
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+    
+    /** 重新生成食物位置 */
+    method void respawn() {
+        // 擦除旧食物
+        do erase();
+        
+        // 生成新位置（避开边界）
+        let x = nextRandom(20, 490);
+        let y = nextRandom(20, 240);
+        
+        // 绘制新食物
+        do draw();
+        
+        return;
+    }
+    
+    /** 绘制食物 */
+    method void draw() {
+        do Screen.setColor(true);
+        do Screen.drawCircle(x, y, size);
+        return;
+    }
+    
+    /** 擦除食物 */
+    method void erase() {
+        do Screen.setColor(false);
+        do Screen.drawCircle(x, y, size);
+        return;
+    }
+    
+    /** 获取食物的 X 坐标 */
+    method int getX() {
+        return x;
+    }
+    
+    /** 获取食物的 Y 坐标 */
+    method int getY() {
+        return y;
+    }
+    
+    /** 生成伪随机数（线性同余生成器） */
+    method int nextRandom(int min, int max) {
+        var int range;
+        
+        // 更新种子（使用线性同余公式）
+        let seed = ((seed * 1103515245) + 12345) & 32767;
+        
+        // 计算范围
+        let range = max - min;
+        
+        // 返回范围内的随机数（对齐到 8 的倍数，便于与蛇对齐）
+        return min + ((seed / 8) - ((seed / (8 * range)) * range)) * 8;
+    }
+}
