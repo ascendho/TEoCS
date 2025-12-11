@@ -1,0 +1,81 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Memory.jack
+
+/**
+ * This library provides two services: direct access to the computer's main
+ * memory (RAM), and allocation and recycling of memory blocks. The Hack RAM
+ * consists of 32,768 words, each holding a 16-bit binary number.
+ */ 
+class Memory {
+    static Array ram;
+    static int freeList;
+    static int heapBase;
+
+    /** Initializes the class. */
+    function void init() {
+        let heapBase = 2048;
+        let freeList = heapBase;
+        let ram = 0;
+        let ram[heapBase] = 14335;      // length of first free segment
+        let ram[heapBase + 1] = 0;      // next pointer (null)
+        return;
+    }
+
+    /** Returns the RAM value at the given address. */
+    function int peek(int address) {
+        return ram[address];
+    }
+
+    /** Sets the RAM value at the given address to the given value. */
+    function void poke(int address, int value) {
+        let ram[address] = value;
+        return;
+    }
+
+    /** Finds an available RAM block of the given size and returns
+     *  a reference to its base address. */
+    function int alloc(int size) {
+        var int current, prev, block, nextBlock;
+        let current = freeList;
+        let prev = 0;
+        
+        // First-fit algorithm
+        while (~(current = 0)) {
+            if (~(ram[current] < (size + 1))) {
+                // Found a suitable block
+                if (ram[current] > (size + 3)) {
+                    // Split the block
+                    let block = current + ram[current] - size;
+                    let ram[block - 1] = size + 1;
+                    let ram[current] = ram[current] - size - 1;
+                    return block;
+                } else {
+                    // Use the entire block
+                    if (prev = 0) {
+                        let freeList = ram[current + 1];
+                    } else {
+                        let ram[prev + 1] = ram[current + 1];
+                    }
+                    return current + 1;
+                }
+            }
+            let prev = current;
+            let current = ram[current + 1];
+        }
+        
+        // No suitable block found
+        return 0;
+    }
+
+    /** De-allocates the given object (cast as an array) by making
+     *  it available for future allocations. */
+    function void deAlloc(Array o) {
+        var int segment;
+        let segment = o - 1;
+        let ram[segment + 1] = freeList;
+        let freeList = segment;
+        return;
+    }    
+}
