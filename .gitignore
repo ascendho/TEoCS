@@ -4,12 +4,16 @@
 *.exe
 assembler
 VMTranslator
+JackAnalyzer
+JackCompiler
 
 # Project 7 & 8 生成的汇编文件
 project/07 - VM I_Stack Arithmetic/**/*.asm
 project/08 - VM II_Program Control/**/*.asm
 # Project 9 生成的虚拟机文件
 project/09 - High-Level Language/code/vm/
+# Project 11 生成的虚拟机文件
+project/11 - Compiler II_Code Generation/code/test/**/*.vm
 
 
 # Project 6 生成的二进制文件
