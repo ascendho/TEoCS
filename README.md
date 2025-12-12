@@ -19,10 +19,6 @@
 
 作者同步推出了两门与本书配套的 以项目为导向的 Coursera 课程，向全球学习者免费开放，可访问 <a href="https://www.coursera.org/instructor/shimon">作者主页</a> 查询课程详情并注册参与。申请助学金（Financial Aid）即可解锁全部课程资源及作业在线测评功能，旁听用户则可通过本地工具完成项目测评。
 
-## 感悟
-
-
-
 ## 证书
 
 <div align="center">
@@ -34,4 +30,3 @@
 <div align="center">
   <img src="certificate/Part II.png" height="500">
 </div>
-
